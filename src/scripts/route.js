@@ -1,69 +1,63 @@
-// tutorial3 starts here
+var coordinates = {
+  // Pike Place Market:
+  lat: 47.6101,
+  lng: -122.3421
+};
 
-// var platform = new H.service.Platform({
-//   app_id: '82Rr651K5ESuat9mVcUW', // // <-- ENTER YOUR APP ID HERE
-//   app_code: 'iNN2uYP8SzZZj_nDsOk6AQ', // <-- ENTER YOUR APP CODE HERE
-//   // Only necessary if served over HTTPS:
-//   useHTTPS: true
-// });
+var SNcoordinates = {
+  // Seattle Center:
+  lat: 47.6205,
+  lng: -122.3493
+};
 
-function HERERoute(map, platform, routeOptions){
+function HERERoute (map, platform, routeOptions) {
+
   var router = platform.getRoutingService();
 
-  var routeLineStyles = {
-    normal: { strokeColor: 'rgba(0, 85, 170, 0.5)', lineWidth: 3 },
-    selected: { strokeColor: 'rgba(255, 0, 0, 0.7)', lineWidth: 7 }
-  };
-  var selectedRoute;
+  var onSuccess = function(result) {
+    var route,
+      routeShape,
+      startPoint,
+      endPoint,
+      strip;
 
-  // onSuccess callback
-  var onSuccess = function(result){
+    route = new HERERoute(map, platform, {
+        mode: 'fastest;car',
+        representation: 'display',
+        waypoint0: locationToWaypointString(coordinates),
+        waypoint1: locationToWaypointString(SNcoordinates)
+    });
 
-    if (result.response.route) {
-      var routeLineGroup = new H.map.Group();
-      var routes = result.response.route.map(function(route){
-        var routeLine = drawRoute(route);
-        routeLineGroup.addObject(routeLine);
-        return {
-          route: route,
-          routeLine: routeLine
-        };
+    if(result.response.route) {
+      // Pick the first route from the response:
+      route = result.response.route[0];
+      // Pick the route's shape:
+      routeShape = route.shape;
+
+      // Create a strip to use as a point source for the route line
+      strip = new H.geo.Strip();
+
+      // Push all the points in the shape into the strip:
+      routeShape.forEach(function(point) {
+        var parts = point.split(',');
+        strip.pushLatLngAlt(parts[0], parts[1]);
       });
 
-      map.addObject(routeLineGroup);
-      map.setViewBounds(routeLineGroup.getBounds());
-      this.routePanel = new HERERoutesPanel(routes,
-        { onRouteSelection: onRouteSelection }
-      );
+      // Create a polyline to display the route:
+      var routeLine = new H.map.Polyline(strip, {
+        style: { strokeColor: 'blue', lineWidth: 10 }
+      });
+
+      // Add the route polyline to the map
+      map.addObject(routeLine);
+
+      // Set the map's viewport to make the whole route visible:
+      map.setViewBounds(routeLine.getBounds());
     }
   };
 
-  // onError callback
-  var onError = function(error){
-    console.error('Oh no! There was some communication error!', error);
-  };
-
-
-  var onRouteSelection = function(route){
-    console.log('A route has been selected.', route);
-    if (selectedRoute){
-      selectedRoute.routeLine.setStyle(routeLineStyles.normal).setZIndex(1);
-    }
-    route.routeLine.setStyle(routeLineStyles.selected).setZIndex(10); selectedRoute = route;
-  };
-
-  var drawRoute = function(route) {
-    var routeShape = route.shape;
-    var strip = new H.geo.Strip();
-
-    routeShape.forEach(function(point){
-      var parts = point.split(',');
-      strip.pushLatLngAlt(parts[0], parts[1]);
-    });
-    var routeLine = new H.map.Polyline(strip, {
-      style: { strokeColor: 'blue', lineWidth: 3 }
-    });
-    return routeLine;
+  var onError = function(error) {
+    console.error('resource not found!', error);
   };
 
   router.calculateRoute(routeOptions, onSuccess, onError);
