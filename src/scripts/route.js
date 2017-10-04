@@ -1,10 +1,10 @@
-var coordinates = {
+var toCoordinates = {
   // Pike Place Market:
   lat: 47.6101,
   lng: -122.3421
 };
 
-var SNcoordinates = {
+var fromCoordinates = {
   // Seattle Center:
   lat: 47.6205,
   lng: -122.3493
@@ -24,8 +24,8 @@ function HERERoute (map, platform, routeOptions) {
     route = new HERERoute(map, platform, {
         mode: 'fastest;car',
         representation: 'display',
-        waypoint0: locationToWaypointString(coordinates),
-        waypoint1: locationToWaypointString(SNcoordinates)
+        waypoint0: locationToWaypointString(fromCoordinates),
+        waypoint1: locationToWaypointString(toCoordinates)
     });
 
     if(result.response.route) {
